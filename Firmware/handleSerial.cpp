@@ -109,7 +109,12 @@ void handleSerial(volatile State_t* State, Date_t* Date, volatile SignalState_t*
         RTC_Doctor();
         Serial.print(F("\n>> User:   "));
         break;
-
+      
+      case 't':
+        clockPeriod();
+        Serial.print(F("\n>> User:   "));
+        break;
+        
       case 's':                 // Start logging data from meter.
         startLogging(State, SignalState, Date);
         Serial.print(F("\n>> User:   "));
@@ -451,6 +456,7 @@ void printHelp()
   Serial.print(F("           l  -- List files on the SD card\n"));
   Serial.print(F("           p  -- Print configuration data\n"));
   Serial.print(F("           R  -- Diagnose the RTC\n"));
+  Serial.print(F("           t  -- Set the time interval at which data is stored on the SD card.\n"));
   Serial.print(F("           s  -- Start datalogging (will append to any existing datalog.csv)\n"));
   Serial.print(F("           S  -- Stop datalogging\n"));
   Serial.print(F("           u  -- Update date/time\n"));
@@ -697,6 +703,42 @@ void RTC_Doctor()
 }
 
 /*********************************************\
+ * Function Name: clockPeriod
+ * Purpose:       Changes the output clock period
+ *                of the Real Time Clock, which
+ *                controls the frequency at which the
+ *                datalogger writes data to the SD.
+ * Inputs:        Input from serial terminal.
+ * Outputs:       No function outputs.
+ * 
+ * Pseudocode:
+ *  Prompt user
+ *  Recieve user input
+ *  Convert user input from chars to value
+ *  Call setClockPeriod()
+ *  Return
+\*********************************************/
+
+void clockPeriod()
+{
+  Serial.print(F(">> Logger: Input 3-digit period: "));
+  char period1;
+  char period10;
+  char period100;
+
+  period100 = getNestedInput();
+  period10  = getNestedInput();
+  period1   = getNestedInput();
+  
+  uint8_t period = (period100 - 48)*100 + (period10 - 48)*10 + (period1 - 48);
+  setClockPeriod(period);
+
+  //Serial.print(F("\n>> User:   "));
+
+  return;
+}
+
+/*********************************************\
  * Function Name: startLogging
  * Purpose:       Enable the datalogging
  *                process. This does so by 
@@ -922,7 +964,7 @@ void printWater(State_t* State)
 {
   Serial.println(F(">> Logger: Data from last sample:"));
   byte pulses = State->lastCount;
-  unsigned int totalPulses = State->totalCount;
+  unsigned long totalPulses = State->totalCount;
   float avgFlowRate;
   float totFlow;
   float totFlowSinceStart;

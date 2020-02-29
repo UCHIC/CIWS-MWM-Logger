@@ -1,7 +1,7 @@
 // Firmware for the CIWS Residential Datalogger
-// Arduino IDE ver. 1.8.8
+// Arduino IDE ver. 1.8.9
 // Utah Water Research Lab
-// Updated: 10/15/2019 (changed to be compatible with Pololu LIS3MDL sensor board)
+// Updated: 11/05/2019 (changed to be compatible with Pololu LIS3MDL sensor board)
 // Daniel Henshaw and Josh Tracy
 // Note: F("String") keeps string literals in program memory and out of RAM. Saves RAM space. Very good. Don't remove the F. I know it looks funny. But don't do it. Really. The program might crash if you do. And then you'll have dishonor on yourself, dishonor on your cow, and you'll find out your cricket ain't lucky.
 // Note: Be sure to process resulting data file as ASCII characters, not Unicode. 
@@ -353,14 +353,14 @@ byte numDigits(unsigned long value)
 
 void storeNewRecord() 
 {                                                       // Begin
-    byte finalCount;                                    //     Declare variables
+    unsigned int finalCount;                            //     Declare variables
     byte temp;
     bool writeErrorCaught = false;
     byte numBytes = 0;
     finalCount = State.pulseCount;                      //     Store pulse count to a variable named final count
     State.pulseCount = 0;                               //     Set pulseCount to zero
     State.lastCount = finalCount;
-    State.totalCount += (unsigned int)finalCount;
+    State.totalCount += (unsigned long)finalCount;
     /*                                                    //     Read current time from the Real Time Clock and update the Date struct with the current time                                                      
       temp         = rtcTransfer(reg_Years,  READ, 0);  //         read the Years and store into temp variable
       Date.years   = bcdtobin(temp, YEARS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into years field of Date struct

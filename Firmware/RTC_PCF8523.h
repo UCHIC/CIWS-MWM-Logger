@@ -55,5 +55,6 @@ typedef struct
 byte rtcTransfer(byte reg, byte flag, byte value); // TWI transfer with RTC
 void registerDump();                               // View contents of RTC Registers (Serial interface must be active)
 void loadDateTime(Date_t* Date);                   // Load Date_t struct with Date and Time info from the RTC.
+void setClockPeriod(uint8_t period);               // Adjust the RTC output clock period
 
 #endif
