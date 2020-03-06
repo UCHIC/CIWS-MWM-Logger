@@ -13,6 +13,7 @@ void resetState(volatile State_t* State)
   State->readMag = false;
   State->configured = false;
   State->rewrite = false;
+  State->meterSize = 0.0;
 
   return;
 }

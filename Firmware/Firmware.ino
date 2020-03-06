@@ -134,7 +134,11 @@ void setup()
   if(configurationExists())
   {
     State.configured = true;
-    State.meterSize = readConfiguration(addr_meterSize);
+    char factor1 = readConfiguration(addr_factor1);
+    char factorTenths = readConfiguration(addr_factorTenths);
+    char factorHundredths = readConfiguration(addr_factorHundredths);
+    char factorThousandths = readConfiguration(addr_factorThousandths);
+    State.meterSize = (float)(factor1 - 48) + (float)((factorTenths - 48) / 10.0) + (float)((factorHundredths - 48) / 100.0) + (float)((factorThousandths - 48) / 1000.0);
   }
   else
     State.configured = false;

@@ -16,7 +16,7 @@ typedef struct
   volatile bool serialOn;
   volatile bool SDin;
   volatile bool readMag;
-  volatile char meterSize;
+  volatile float meterSize;
   volatile bool configured;
   volatile char filename[13];
   volatile bool rewrite;

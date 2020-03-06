@@ -186,8 +186,7 @@ void setConfiguration(volatile State_t* State)
   Serial.write(readConfiguration(addr_siteNum100));
   Serial.write(readConfiguration(addr_siteNum10));
   Serial.write(readConfiguration(addr_siteNum1));
-  Serial.println();
-  Serial.print(F(">> User:   "));
+  Serial.print(F("\n>> User:   "));
   writeConfiguration(addr_siteNum100, getNestedInput());
   writeConfiguration(addr_siteNum10, getNestedInput());
   writeConfiguration(addr_siteNum1, getNestedInput());
@@ -196,36 +195,30 @@ void setConfiguration(volatile State_t* State)
   Serial.write(readConfiguration(addr_logID100));
   Serial.write(readConfiguration(addr_logID10));
   Serial.write(readConfiguration(addr_logID1));
-  Serial.println();
-  Serial.print(F(">> User:   "));
+  Serial.print(F("\n>> User:   "));
   writeConfiguration(addr_logID100, getNestedInput());
   writeConfiguration(addr_logID10, getNestedInput());
   writeConfiguration(addr_logID1, getNestedInput());
-  
-  Serial.print(F("\n>> Logger: Select Meter\n"));
-  Serial.print(F("    1 -- 1\" Meter\n"));
-  Serial.print(F("    5 -- 5/8\" Meter\n"));
-  Serial.print(F(">> User:   "));
-  char input = getNestedInput();
-  switch(input)
-  {
-    case '1':
-      Serial.print(F("\n>> Logger: 1\" Meter\n"));
-      State->meterSize = '1';
-      break;
 
-    case '5':
-      Serial.print(F("\n>> Logger: 5/8\" Meter\n"));
-      State->meterSize = '5';
-      break;
+  Serial.print(F("\n>> Logger: Input Meter Pulse to Gallon Factor (x.xxx). Current Factor is "));
+  Serial.write(readConfiguration(addr_factor1));
+  Serial.print(F("."));
+  Serial.write(readConfiguration(addr_factorTenths));
+  Serial.write(readConfiguration(addr_factorHundredths));
+  Serial.write(readConfiguration(addr_factorThousandths));
+  Serial.print(F("\n>> User:   "));
+  char factor1 = getNestedInput();
+  char dot = getNestedInput();
+  char factorTenths = getNestedInput();
+  char factorHundredths = getNestedInput();
+  char factorThousandths = getNestedInput();
+  writeConfiguration(addr_factor1, factor1);
+  writeConfiguration(addr_factorTenths, factorTenths);
+  writeConfiguration(addr_factorHundredths, factorHundredths);
+  writeConfiguration(addr_factorThousandths, factorThousandths);
 
-    default:
-      Serial.print(F("\n>> Logger: WARNING: INVALID Meter setting\n"));
-      State->meterSize = NULL;
-      break;
-  }
-  writeConfiguration(addr_meterSize, State->meterSize);
-  
+  State->meterSize = (float)(factor1 - 48) + (float)((factorTenths - 48) / 10.0) + (float)((factorHundredths - 48) / 100.0) + (float)((factorThousandths - 48) / 1000.0);
+
   Serial.print(F("\n>> Logger: Input Sequential File Number (4 DIGITS). Current Number is "));
   Serial.write(readConfiguration(addr_fileNum1000));
   Serial.write(readConfiguration(addr_fileNum100));
@@ -969,45 +962,28 @@ void printWater(State_t* State)
   float totFlow;
   float totFlowSinceStart;
   float convFactor;
-  switch(State->meterSize)
-  {
-    case '1':
-      convFactor = 0.033;
-      break;
-    case '5':
-      convFactor = 0.0087;
-      break;
-    default:
-      convFactor = NULL;
-      break;
-  }
-  totFlow = (float)pulses * convFactor;
-  totFlowSinceStart = (float)totalPulses * convFactor;
+  
+  totFlow = (float)pulses * State->meterSize;
+  totFlowSinceStart = (float)totalPulses * State->meterSize;
   avgFlowRate = totFlow * 60.0 / 4.0;
 
   Serial.print(F(">> Logger: Total Pulses: "));
   Serial.println(pulses);
-  if(convFactor != NULL)
-  {
-    Serial.print(F(">> Logger: Total Flow:   "));
-    Serial.print(totFlow);
-    Serial.print(F(" Gal\n"));
   
-    Serial.print(F(">> Logger: Average Flow: "));
-    Serial.print(avgFlowRate);
-    Serial.print(F(" Gal/min\n\n"));
+  Serial.print(F(">> Logger: Total Flow:   "));
+  Serial.print(totFlow);
+  Serial.print(F(" Gal\n"));
 
-    Serial.print(F(">> Logger: Total Pulses since logging start: "));
-    Serial.println(totalPulses);
+  Serial.print(F(">> Logger: Average Flow: "));
+  Serial.print(avgFlowRate);
+  Serial.print(F(" Gal/min\n\n"));
 
-    Serial.print(F(">> Logger: Total Flow since logging start:   "));
-    Serial.print(totFlowSinceStart);
-    Serial.print(F(" Gal\n"));
-  }
-  else
-  {
-    Serial.println(F(">> Logger: Invalid meter configuration. Cannot print more flow data. Reset configuration with 'g'."));
-  }
+  Serial.print(F(">> Logger: Total Pulses since logging start: "));
+  Serial.println(totalPulses);
+
+  Serial.print(F(">> Logger: Total Flow since logging start:   "));
+  Serial.print(totFlowSinceStart);
+  Serial.print(F(" Gal\n"));
 
   return;
 }
@@ -1033,19 +1009,9 @@ void printConfig(State_t* State)
   Serial.write(readConfiguration(addr_fileNum1));
   Serial.println();
   
-  Serial.print(F(">> Logger: Meter Size:        "));
-  switch(State->meterSize)
-  {
-    case '1':
-      Serial.println(F("1\""));
-      break;
-    case '5':
-      Serial.println(F("5/8\""));
-      break;
-    default:
-      Serial.println(F("INVALID"));
-      break;
-  }
+  Serial.print(F(">> Logger: Meter Factor:      "));
+  Serial.println(State->meterSize, 3);
+  
 
   return;
 }
@@ -1084,19 +1050,8 @@ void createHeader(State_t* State)
   dataFile.write(readConfiguration(addr_logID1));
   dataFile.println();
   
-  dataFile.print(F("Meter Size: "));
-  switch(State->meterSize)
-  {
-    case '1':
-      dataFile.println(F("1\""));
-      break;
-    case '5':
-      dataFile.println(F("5/8\""));
-      break;
-    default:
-      dataFile.println(F("INVALID"));
-      break;
-  }
+  dataFile.print(F("Meter Factor: "));
+  dataFile.print(State->meterSize, 3);
   
   dataFile.print(F("Time,Record,Pulses\n"));
 
