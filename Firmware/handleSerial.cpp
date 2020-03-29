@@ -1050,8 +1050,8 @@ void createHeader(State_t* State)
   dataFile.write(readConfiguration(addr_logID1));
   dataFile.println();
   
-  dataFile.print(F("Meter Factor: "));
-  dataFile.print(State->meterSize, 3);
+  dataFile.print(F("Meter Resolution: "));
+  dataFile.println(State->meterSize, 3);
   
   dataFile.print(F("Time,Record,Pulses\n"));
 

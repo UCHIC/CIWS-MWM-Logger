@@ -89,30 +89,40 @@ bool mag_init()
   // Declare and initialize variables
   int8_t receivedBytes[19];
   int8_t myBuffer;
-  //byte const initializerForCTRL_REG1
-  
-  // mag_transfer(&receivedBytes, STATUS_REG, 1 /* byte */, MAG_READ);
-  
-  // Loop While sensor is not ready
-  //while (/* code to read the status register goes here */ mag_transfer) 
-  //{
-  //  delay(5);  // Do nothing for a little time to cause a delay (5 ms is just a guess)
-  //    // Continue reading status register      
-  //} // EndLoop
 
   // Store the configuration value for Control register 1 into buffer
-  //myBuffer = 0x72;              // 0b0 11 100 1 0 == 0x72
-  myBuffer = 0x32;                // 0b0 00 100 1 0 == 0x12
+  #ifdef Hz560
+    myBuffer = 0x32;              // 0b0 01 100 1 0 == 0x32
+  #endif
+  #ifdef Hz300
+    myBuffer = 0x52;              // 0b0 10 100 1 0
+  #endif
+  #ifdef Hz155
+    myBuffer = 0x72;              // 0b0 11 100 1 0
+  #endif
   // Write to control register N (N is from 1 to 5)
   // Read back control register N to verify configuration successful
   mag_transfer(&myBuffer, CTRL_REG1, 1 /* byte */, MAG_WRITE);
   mag_transfer(&myBuffer, CTRL_REG1, 1 /* byte */, MAG_READ);
-  
-  //if(myBuffer != 0x72)  // check that the data read back matches what we wanted to write
+
+  #ifdef Hz560
   if(myBuffer != 0x32)  // check that the data read back matches what we wanted to write
   {
     return 0; // zero means an error occurred
   }
+  #endif
+  #ifdef Hz300
+  if(myBuffer != 0x52)  // check that the data read back matches what we wanted to write
+  {
+    return 0; // zero means an error occurred
+  }
+  #endif
+  #ifdef Hz155
+  if(myBuffer != 0x72)  // check that the data read back matches what we wanted to write
+  {
+    return 0; // zero means an error occurred
+  }
+  #endif
 
 /* NOTE: SKIPPING CTRL_REG2 FOR NOW, BECAUSE DEFAULT RANGE OF +/- 4 GAUSS IS FINE */
 
@@ -130,19 +140,39 @@ bool mag_init()
   }
 
   // Store the configuration value for Control register 4 into buffer
-  //myBuffer = 0x0C; // 0b0000 11 00 == 0x0C
-  myBuffer = 0x04; // 0b0000 01 00 == 0x04
+  #ifdef Hz560
+    myBuffer = 0x04; // 0b0000 01 00 == 0x04
+  #endif
+  #ifdef Hz300
+    myBuffer = 0x08;
+  #endif
+  #ifdef Hz155
+    myBuffer = 0x0C;
+  #endif
   // Write to control register 4
   // Read back control register 4 to verify configuration successful
   mag_transfer(&myBuffer, CTRL_REG4, 1 /* byte */, MAG_WRITE);
   mag_transfer(&myBuffer, CTRL_REG4, 1 /* byte */, MAG_READ);
 
-  //if(myBuffer != 0x0C)  // check that the data read back matches what we wanted to write
+  #ifdef Hz560
   if(myBuffer != 0x04)  // check that the data read back matches what we wanted to write
   {
     return 0; // zero means an error occurred
   }
-
+  #endif
+  #ifdef Hz300
+  if(myBuffer != 0x08)  // check that the data read back matches what we wanted to write
+  {
+    return 0; // zero means an error occurred
+  }
+  #endif
+  #ifdef Hz155
+  if(myBuffer != 0x0C)  // check that the data read back matches what we wanted to write
+  {
+    return 0; // zero means an error occurred
+  }
+  #endif
+  
   // Store the configuration value for Control register 5 into buffer
   myBuffer = 0x80; // 0b1000 0000 == 0x80
 
