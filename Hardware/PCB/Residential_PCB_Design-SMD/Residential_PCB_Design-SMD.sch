@@ -81,7 +81,7 @@ U 1 1 5DC9A75D
 P 5900 3400
 F 0 "Y1" V 5850 3450 50  0000 L CNN
 F 1 "8MHz" V 6050 3350 50  0000 L CNN
-F 2 "Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm_HandSoldering" H 5900 3400 50  0001 C CNN
+F 2 "Crystal:Crystal_SMD_Abracon_ABM3-2Pin_5.0x3.2mm" H 5900 3400 50  0001 C CNN
 F 3 "~" H 5900 3400 50  0001 C CNN
 	1    5900 3400
 	0    1    1    0   

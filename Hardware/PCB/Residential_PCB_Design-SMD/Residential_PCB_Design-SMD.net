@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source "C:\\Users\\Joshua Tracy\\Documents\\Residential Design\\Residential_PCB_Design\\Residential_PCB_Design-SMD\\Residential_PCB_Design-SMD.sch")
-    (date "11/25/2019 9:08:46 AM")
+    (date "2/5/2020 3:58:36 PM")
     (tool "Eeschema (5.0.2)-1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -37,7 +37,7 @@
       (tstamp 5DC99FAD))
     (comp (ref Y1)
       (value 8MHz)
-      (footprint Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm_HandSoldering)
+      (footprint Crystal:Crystal_SMD_Abracon_ABM3-2Pin_5.0x3.2mm)
       (datasheet ~)
       (libsource (lib Device) (part Crystal_Small) (description "Two pin crystal, small symbol"))
       (sheetpath (names /) (tstamps /))
