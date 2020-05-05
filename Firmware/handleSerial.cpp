@@ -2,7 +2,6 @@
  * File:      handleSerial.cpp
  * Date:      04/17/2019
  * Authors:   Joshua Tracy and Daniel Henshaw
- * Hardware:  Pololu LIS3MDL 3-Axis magnetometer 
  *********************************************************************/
 
 #include "handleSerial.h"
@@ -161,6 +160,14 @@ void handleSerial(volatile State_t* State, Date_t* Date, volatile SignalState_t*
  *   void updateDateTime();                         Complete  Tested
  *   char getInput();                               Complete  Tested
  *   char getNestedInput();                         Complete  Tested
+ *   void listFiles();                              Complete  Tested, occasionally won't list all files
+ *   void RTC_Doctor();                             Complete  Tested
+ *   void clockPeriod();                            Complete  Tested
+ *   void printWater(State_t* State);               Complete  Tested
+ *   void printConfig(State_t* State);              Complete  Tested
+ *   void createHeader(State_t* State);             Complete  Tested
+ *   void nameFile(State_t* State, Date_t* Date);   Complete  Tested
+ *   void incrementFileNumber(void);                Complete  Tested
 \********************************************************************************************************************************/
 
 /*****************************************************************\
@@ -497,6 +504,11 @@ void initSD(volatile State_t* State)
   return;
 }
 
+/*********************************************\
+ * Function Name: listFiles
+ * Purpose:       List files on the SD card
+\*********************************************/
+
 void listFiles(void)
 {
   SDPowerUp();
@@ -542,6 +554,13 @@ void listFiles(void)
   SDPowerDown();
   return;
 }
+
+/*********************************************\
+ * Function Name: RTC_Doctor
+ * Purpose:       Diagnose poor RTC behavior
+ *                by displaying and editing
+ *                RTC registers
+\*********************************************/
 
 void RTC_Doctor()
 {
@@ -953,6 +972,11 @@ char getNestedInput()
   return input;
 }
 
+/*********************************************\
+ * Function Name: printWater
+ * Purpose:       Prints water flow data
+\*********************************************/
+
 void printWater(State_t* State)
 {
   Serial.println(F(">> Logger: Data from last sample:"));
@@ -987,6 +1011,11 @@ void printWater(State_t* State)
 
   return;
 }
+
+/*********************************************\
+ * Function Name: printConfig
+ * Purpose:       Print configuration data
+\*********************************************/
 
 void printConfig(State_t* State)
 {
@@ -1061,6 +1090,12 @@ void createHeader(State_t* State)
   return;
 }
 
+/*********************************************\
+ * Function Name: nameFile
+ * Purpose:       Generate filename based on
+ *                configuration data
+\*********************************************/
+
 void nameFile(State_t* State, Date_t* Date)
 {
   State->filename[0] = readConfiguration(addr_siteNum100);
@@ -1081,6 +1116,12 @@ void nameFile(State_t* State, Date_t* Date)
 
   return;
 }
+
+/*********************************************\
+ * Function Name: incrementFileNumber
+ * Purpose:       Increment the file number
+ *                in the configuration data
+\*********************************************/
 
 void incrementFileNumber(void)
 {
