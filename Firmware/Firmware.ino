@@ -273,6 +273,12 @@ void INT1_ISR()
   State.flag4 = true;     // sets the "four second flag" to true
 }
 
+/*********************************************\
+ * Function Name: sdWriteError
+ * Purpose:       Catch write errors to the
+ *                SD card
+\*********************************************/
+
 bool sdWriteError(File* dataFile, byte numBytesAttempted, byte numBytesWritten)
 {
   bool errorCaught = false;
@@ -283,6 +289,14 @@ bool sdWriteError(File* dataFile, byte numBytesAttempted, byte numBytesWritten)
 
   return errorCaught;
 }
+
+/*********************************************\
+ * Function Name: numDigits
+ * Purpose:       Calculate the number of
+ *                digits in a value (which
+ *                equals the number of bytes
+ *                in that value)
+\*********************************************/
 
 byte numDigits(unsigned long value)
 {
