@@ -1,0 +1,21 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP NE555DR
+D Single Precision Timer
+K
+F http://www.ti.com/lit/ds/symlink/ne555.pdf
+$ENDCMP
+#
+$CMP PCF8523T_1,118
+D NXP - PCF8523T/1,118 - REAL TIME CLOCK/CALENDAR, I2C, SOIC-8
+K
+F https://componentsearchengine.com/Datasheets/1/PCF8523T_1,118.pdf
+$ENDCMP
+#
+$CMP 2895
+D Coin Cell Battery Holders CR1220 COIN CELL THM RETAINER
+K
+F https://componentsearchengine.com/Datasheets/1/2895.pdf
+$ENDCMP
+#
+#End Doc Library

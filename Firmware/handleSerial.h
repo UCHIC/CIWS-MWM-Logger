@@ -28,6 +28,7 @@ void startLogging(volatile State_t* State, volatile SignalState_t* SignalState, 
 void stopLogging(volatile State_t* State);
 void updateDateTime(Date_t* Date);
 void RTC_Doctor();
+void clockPeriod();
 char getInput();
 char getNestedInput();
 void printWater(State_t* State);

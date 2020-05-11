@@ -12,6 +12,8 @@ void resetState(volatile State_t* State)
   State->SDin = false;
   State->readMag = false;
   State->configured = false;
+  State->rewrite = false;
+  State->meterSize = 0.0;
 
   return;
 }

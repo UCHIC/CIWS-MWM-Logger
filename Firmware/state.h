@@ -7,18 +7,19 @@
 
 typedef struct
 {
-  volatile byte pulseCount;
-  volatile byte lastCount;
-  volatile unsigned int totalCount;
+  volatile unsigned int pulseCount;
+  volatile unsigned int lastCount;
+  volatile unsigned long totalCount;
   volatile unsigned long recordNum;
   volatile bool logging;
   volatile bool flag4;
   volatile bool serialOn;
   volatile bool SDin;
   volatile bool readMag;
-  volatile char meterSize;
+  volatile float meterSize;
   volatile bool configured;
   volatile char filename[13];
+  volatile bool rewrite;
 } State_t;
 
 // Signal State Struct

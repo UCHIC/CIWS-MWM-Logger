@@ -8,9 +8,9 @@
 #ifndef MAGNETOMETER_H
 #define MAGNETOMETER_H
 
-#include "state.h"   // Do we need this line? 4/19/19 D.H.
-#include <Arduino.h> // Do we need this line? 4/19/19 D.H.
-#include <Wire.h>    // Do we need this line? 4/19/19 D.H.
+#include "state.h"
+#include <Arduino.h>.
+#include <Wire.h>
 
 /*********************************************************************\
  * 
@@ -24,6 +24,10 @@
 \*********************************************************************/
 
 /*========= MACROS =========*/
+
+#define Hz560
+//#define Hz300
+//#define Hz155
 
 /* Device Address */
 #define DEV_ADDR 0x1E

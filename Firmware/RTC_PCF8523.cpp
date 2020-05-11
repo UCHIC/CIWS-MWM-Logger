@@ -168,3 +168,34 @@ void loadDateTime(Date_t* Date)
 
   return;
 }
+
+/***********************************************\
+ * Name:    setClockPeriod
+ * Purpose: Changes the output clock period
+ *          of the Real Time Clock, which
+ *          controls the frequency at which the
+ *          datalogger writes data to the SD.
+ * Inputs:  8-bit clock period in seconds.
+ * Outputs: No function outputs.
+ *          
+ * Pseudocode:
+ *   Power on TWI interface
+ *   Begin a transmission to the RTC
+ *   Write the register number
+ *   Write the value to write
+ *   Power down TWI interface
+\***********************************************/
+
+void setClockPeriod(uint8_t period)
+{
+  twiPowerUp();
+  
+  Wire.beginTransmission(deviceAddr);
+  Wire.write(reg_Tmr_A_reg);
+  Wire.write(period);
+  Wire.endTransmission();
+
+  twiPowerDown();
+
+  return;
+}

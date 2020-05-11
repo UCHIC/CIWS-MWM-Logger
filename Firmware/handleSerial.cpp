@@ -2,7 +2,6 @@
  * File:      handleSerial.cpp
  * Date:      04/17/2019
  * Authors:   Joshua Tracy and Daniel Henshaw
- * Hardware:  Pololu LIS3MDL 3-Axis magnetometer 
  *********************************************************************/
 
 #include "handleSerial.h"
@@ -109,7 +108,12 @@ void handleSerial(volatile State_t* State, Date_t* Date, volatile SignalState_t*
         RTC_Doctor();
         Serial.print(F("\n>> User:   "));
         break;
-
+      
+      case 't':
+        clockPeriod();
+        Serial.print(F("\n>> User:   "));
+        break;
+        
       case 's':                 // Start logging data from meter.
         startLogging(State, SignalState, Date);
         Serial.print(F("\n>> User:   "));
@@ -156,6 +160,14 @@ void handleSerial(volatile State_t* State, Date_t* Date, volatile SignalState_t*
  *   void updateDateTime();                         Complete  Tested
  *   char getInput();                               Complete  Tested
  *   char getNestedInput();                         Complete  Tested
+ *   void listFiles();                              Complete  Tested, occasionally won't list all files
+ *   void RTC_Doctor();                             Complete  Tested
+ *   void clockPeriod();                            Complete  Tested
+ *   void printWater(State_t* State);               Complete  Tested
+ *   void printConfig(State_t* State);              Complete  Tested
+ *   void createHeader(State_t* State);             Complete  Tested
+ *   void nameFile(State_t* State, Date_t* Date);   Complete  Tested
+ *   void incrementFileNumber(void);                Complete  Tested
 \********************************************************************************************************************************/
 
 /*****************************************************************\
@@ -181,8 +193,7 @@ void setConfiguration(volatile State_t* State)
   Serial.write(readConfiguration(addr_siteNum100));
   Serial.write(readConfiguration(addr_siteNum10));
   Serial.write(readConfiguration(addr_siteNum1));
-  Serial.println();
-  Serial.print(F(">> User:   "));
+  Serial.print(F("\n>> User:   "));
   writeConfiguration(addr_siteNum100, getNestedInput());
   writeConfiguration(addr_siteNum10, getNestedInput());
   writeConfiguration(addr_siteNum1, getNestedInput());
@@ -191,36 +202,30 @@ void setConfiguration(volatile State_t* State)
   Serial.write(readConfiguration(addr_logID100));
   Serial.write(readConfiguration(addr_logID10));
   Serial.write(readConfiguration(addr_logID1));
-  Serial.println();
-  Serial.print(F(">> User:   "));
+  Serial.print(F("\n>> User:   "));
   writeConfiguration(addr_logID100, getNestedInput());
   writeConfiguration(addr_logID10, getNestedInput());
   writeConfiguration(addr_logID1, getNestedInput());
-  
-  Serial.print(F("\n>> Logger: Select Meter\n"));
-  Serial.print(F("    1 -- 1\" Meter\n"));
-  Serial.print(F("    5 -- 5/8\" Meter\n"));
-  Serial.print(F(">> User:   "));
-  char input = getNestedInput();
-  switch(input)
-  {
-    case '1':
-      Serial.print(F("\n>> Logger: 1\" Meter\n"));
-      State->meterSize = '1';
-      break;
 
-    case '5':
-      Serial.print(F("\n>> Logger: 5/8\" Meter\n"));
-      State->meterSize = '5';
-      break;
+  Serial.print(F("\n>> Logger: Input Meter Pulse to Gallon Factor (x.xxx). Current Factor is "));
+  Serial.write(readConfiguration(addr_factor1));
+  Serial.print(F("."));
+  Serial.write(readConfiguration(addr_factorTenths));
+  Serial.write(readConfiguration(addr_factorHundredths));
+  Serial.write(readConfiguration(addr_factorThousandths));
+  Serial.print(F("\n>> User:   "));
+  char factor1 = getNestedInput();
+  char dot = getNestedInput();
+  char factorTenths = getNestedInput();
+  char factorHundredths = getNestedInput();
+  char factorThousandths = getNestedInput();
+  writeConfiguration(addr_factor1, factor1);
+  writeConfiguration(addr_factorTenths, factorTenths);
+  writeConfiguration(addr_factorHundredths, factorHundredths);
+  writeConfiguration(addr_factorThousandths, factorThousandths);
 
-    default:
-      Serial.print(F("\n>> Logger: WARNING: INVALID Meter setting\n"));
-      State->meterSize = NULL;
-      break;
-  }
-  writeConfiguration(addr_meterSize, State->meterSize);
-  
+  State->meterSize = (float)(factor1 - 48) + (float)((factorTenths - 48) / 10.0) + (float)((factorHundredths - 48) / 100.0) + (float)((factorThousandths - 48) / 1000.0);
+
   Serial.print(F("\n>> Logger: Input Sequential File Number (4 DIGITS). Current Number is "));
   Serial.write(readConfiguration(addr_fileNum1000));
   Serial.write(readConfiguration(addr_fileNum100));
@@ -451,6 +456,7 @@ void printHelp()
   Serial.print(F("           l  -- List files on the SD card\n"));
   Serial.print(F("           p  -- Print configuration data\n"));
   Serial.print(F("           R  -- Diagnose the RTC\n"));
+  Serial.print(F("           t  -- Set the time interval at which data is stored on the SD card.\n"));
   Serial.print(F("           s  -- Start datalogging (will append to any existing datalog.csv)\n"));
   Serial.print(F("           S  -- Stop datalogging\n"));
   Serial.print(F("           u  -- Update date/time\n"));
@@ -498,6 +504,11 @@ void initSD(volatile State_t* State)
   return;
 }
 
+/*********************************************\
+ * Function Name: listFiles
+ * Purpose:       List files on the SD card
+\*********************************************/
+
 void listFiles(void)
 {
   SDPowerUp();
@@ -543,6 +554,13 @@ void listFiles(void)
   SDPowerDown();
   return;
 }
+
+/*********************************************\
+ * Function Name: RTC_Doctor
+ * Purpose:       Diagnose poor RTC behavior
+ *                by displaying and editing
+ *                RTC registers
+\*********************************************/
 
 void RTC_Doctor()
 {
@@ -693,6 +711,42 @@ void RTC_Doctor()
   }
   Serial.print(F("Goodbye!"));
   EIMSK |= (1 << INT1);       
+  return;
+}
+
+/*********************************************\
+ * Function Name: clockPeriod
+ * Purpose:       Changes the output clock period
+ *                of the Real Time Clock, which
+ *                controls the frequency at which the
+ *                datalogger writes data to the SD.
+ * Inputs:        Input from serial terminal.
+ * Outputs:       No function outputs.
+ * 
+ * Pseudocode:
+ *  Prompt user
+ *  Recieve user input
+ *  Convert user input from chars to value
+ *  Call setClockPeriod()
+ *  Return
+\*********************************************/
+
+void clockPeriod()
+{
+  Serial.print(F(">> Logger: Input 3-digit period: "));
+  char period1;
+  char period10;
+  char period100;
+
+  period100 = getNestedInput();
+  period10  = getNestedInput();
+  period1   = getNestedInput();
+  
+  uint8_t period = (period100 - 48)*100 + (period10 - 48)*10 + (period1 - 48);
+  setClockPeriod(period);
+
+  //Serial.print(F("\n>> User:   "));
+
   return;
 }
 
@@ -918,57 +972,50 @@ char getNestedInput()
   return input;
 }
 
+/*********************************************\
+ * Function Name: printWater
+ * Purpose:       Prints water flow data
+\*********************************************/
+
 void printWater(State_t* State)
 {
   Serial.println(F(">> Logger: Data from last sample:"));
   byte pulses = State->lastCount;
-  unsigned int totalPulses = State->totalCount;
+  unsigned long totalPulses = State->totalCount;
   float avgFlowRate;
   float totFlow;
   float totFlowSinceStart;
   float convFactor;
-  switch(State->meterSize)
-  {
-    case '1':
-      convFactor = 0.033;
-      break;
-    case '5':
-      convFactor = 0.0087;
-      break;
-    default:
-      convFactor = NULL;
-      break;
-  }
-  totFlow = (float)pulses * convFactor;
-  totFlowSinceStart = (float)totalPulses * convFactor;
+  
+  totFlow = (float)pulses * State->meterSize;
+  totFlowSinceStart = (float)totalPulses * State->meterSize;
   avgFlowRate = totFlow * 60.0 / 4.0;
 
   Serial.print(F(">> Logger: Total Pulses: "));
   Serial.println(pulses);
-  if(convFactor != NULL)
-  {
-    Serial.print(F(">> Logger: Total Flow:   "));
-    Serial.print(totFlow);
-    Serial.print(F(" Gal\n"));
   
-    Serial.print(F(">> Logger: Average Flow: "));
-    Serial.print(avgFlowRate);
-    Serial.print(F(" Gal/min\n\n"));
+  Serial.print(F(">> Logger: Total Flow:   "));
+  Serial.print(totFlow);
+  Serial.print(F(" Gal\n"));
 
-    Serial.print(F(">> Logger: Total Pulses since logging start: "));
-    Serial.println(totalPulses);
+  Serial.print(F(">> Logger: Average Flow: "));
+  Serial.print(avgFlowRate);
+  Serial.print(F(" Gal/min\n\n"));
 
-    Serial.print(F(">> Logger: Total Flow since logging start:   "));
-    Serial.print(totFlowSinceStart);
-    Serial.print(F(" Gal\n"));
-  }
-  else
-  {
-    Serial.println(F(">> Logger: Invalid meter configuration. Cannot print more flow data. Reset configuration with 'g'."));
-  }
+  Serial.print(F(">> Logger: Total Pulses since logging start: "));
+  Serial.println(totalPulses);
+
+  Serial.print(F(">> Logger: Total Flow since logging start:   "));
+  Serial.print(totFlowSinceStart);
+  Serial.print(F(" Gal\n"));
 
   return;
 }
+
+/*********************************************\
+ * Function Name: printConfig
+ * Purpose:       Print configuration data
+\*********************************************/
 
 void printConfig(State_t* State)
 {
@@ -991,19 +1038,9 @@ void printConfig(State_t* State)
   Serial.write(readConfiguration(addr_fileNum1));
   Serial.println();
   
-  Serial.print(F(">> Logger: Meter Size:        "));
-  switch(State->meterSize)
-  {
-    case '1':
-      Serial.println(F("1\""));
-      break;
-    case '5':
-      Serial.println(F("5/8\""));
-      break;
-    default:
-      Serial.println(F("INVALID"));
-      break;
-  }
+  Serial.print(F(">> Logger: Meter Factor:      "));
+  Serial.println(State->meterSize, 3);
+  
 
   return;
 }
@@ -1042,19 +1079,8 @@ void createHeader(State_t* State)
   dataFile.write(readConfiguration(addr_logID1));
   dataFile.println();
   
-  dataFile.print(F("Meter Size: "));
-  switch(State->meterSize)
-  {
-    case '1':
-      dataFile.println(F("1\""));
-      break;
-    case '5':
-      dataFile.println(F("5/8\""));
-      break;
-    default:
-      dataFile.println(F("INVALID"));
-      break;
-  }
+  dataFile.print(F("Meter Resolution: "));
+  dataFile.println(State->meterSize, 3);
   
   dataFile.print(F("Time,Record,Pulses\n"));
 
@@ -1063,6 +1089,12 @@ void createHeader(State_t* State)
 
   return;
 }
+
+/*********************************************\
+ * Function Name: nameFile
+ * Purpose:       Generate filename based on
+ *                configuration data
+\*********************************************/
 
 void nameFile(State_t* State, Date_t* Date)
 {
@@ -1084,6 +1116,12 @@ void nameFile(State_t* State, Date_t* Date)
 
   return;
 }
+
+/*********************************************\
+ * Function Name: incrementFileNumber
+ * Purpose:       Increment the file number
+ *                in the configuration data
+\*********************************************/
 
 void incrementFileNumber(void)
 {

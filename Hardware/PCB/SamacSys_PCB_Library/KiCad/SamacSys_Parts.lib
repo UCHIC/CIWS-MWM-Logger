@@ -1,0 +1,78 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#SamacSys ECAD Model NE555DR
+#/6648/2/2.37/8/4/Integrated Circuit
+DEF NE555DR IC 0 30 Y Y 1 F N
+F0 "IC" 1050 600 50 H V L CNN
+F1 "NE555DR" 1050 500 50 H V L CNN
+F2 "SOIC127P600X175-8N" 1050 400 50 H I L CNN
+F3 "http://www.ti.com/lit/ds/symlink/ne555.pdf" 1050 300 50 H I L CNN
+F4 "Single Precision Timer" 1050 200 50 H I L CNN "Description"
+F5 "1.75" 1050 100 50 H I L CNN "Height"
+F6 "Texas Instruments" 1050 0 50 H I L CNN "Manufacturer_Name"
+F7 "NE555DR" 1050 -100 50 H I L CNN "Manufacturer_Part_Number"
+F8 "595-NE555DR" 1050 -200 50 H I L CNN "Mouser Part Number"
+F9 "https://www.mouser.com/Search/Refine.aspx?Keyword=595-NE555DR" 1050 -300 50 H I L CNN "Mouser Price/Stock"
+F10 "1218414" 1050 -400 50 H I L CNN "RS Part Number"
+F11 "http//uk.rs-online.com/web/p/products/1218414" 1050 -500 50 H I L CNN "RS Price/Stock"
+DRAW
+X GND 1 600 -1000 200 U 50 50 0 0 B
+X TRIG 2 0 -400 200 R 50 50 0 0 B
+X OUT 3 1200 -200 200 L 50 50 0 0 B
+X ~RESET 4 0 0 200 R 50 50 0 0 B
+X CONT 5 500 600 200 D 50 50 0 0 B
+X THRES 6 0 -300 200 R 50 50 0 0 B
+X DISCH 7 0 -100 200 R 50 50 0 0 B
+X VCC 8 700 600 200 D 50 50 0 0 B
+P 5 0 1 6 200 400 1000 400 1000 -800 200 -800 200 400 N
+ENDDRAW
+ENDDEF
+#
+#SamacSys ECAD Model PCF8523T_1,118
+#/274221/195893/2.44/8/4/Integrated Circuit
+DEF PCF8523T_1,118 IC 0 30 Y Y 1 F N
+F0 "IC" 1350 300 50 H V L CNN
+F1 "PCF8523T_1,118" 1350 200 50 H V L CNN
+F2 "SOIC127P600X175-8N" 1350 100 50 H I L CNN
+F3 "https://componentsearchengine.com/Datasheets/1/PCF8523T_1,118.pdf" 1350 0 50 H I L CNN
+F4 "NXP - PCF8523T/1,118 - REAL TIME CLOCK/CALENDAR, I2C, SOIC-8" 1350 -100 50 H I L CNN "Description"
+F5 "1.75" 1350 -200 50 H I L CNN "Height"
+F6 "771-PCF8523T/1118" 1350 -300 50 H I L CNN "Mouser Part Number"
+F7 "https://www.mouser.com/Search/Refine.aspx?Keyword=771-PCF8523T%2F1118" 1350 -400 50 H I L CNN "Mouser Price/Stock"
+F8 "Nexperia" 1350 -500 50 H I L CNN "Manufacturer_Name"
+F9 "PCF8523T/1,118" 1350 -600 50 H I L CNN "Manufacturer_Part_Number"
+DRAW
+X ~ 1 0 0 200 R 50 50 0 0 U
+X ~ 2 0 -100 200 R 50 50 0 0 U
+X ~ 3 0 -200 200 R 50 50 0 0 U
+X ~ 4 0 -300 200 R 50 50 0 0 U
+X ~ 8 1500 0 200 L 50 50 0 0 U
+X ~ 7 1500 -100 200 L 50 50 0 0 U
+X ~ 6 1500 -200 200 L 50 50 0 0 U
+X ~ 5 1500 -300 200 L 50 50 0 0 U
+P 5 0 1 6 200 100 1300 100 1300 -400 200 -400 200 100 N
+ENDDRAW
+ENDDEF
+#
+#SamacSys ECAD Model 2895
+#/1840531/195893/2.44/3/4/Connector
+DEF 2895 J 0 30 Y Y 1 F N
+F0 "J" 750 300 50 H V L CNN
+F1 "2895" 750 200 50 H V L CNN
+F2 "2895" 750 100 50 H I L CNN
+F3 "https://componentsearchengine.com/Datasheets/1/2895.pdf" 750 0 50 H I L CNN
+F4 "Coin Cell Battery Holders CR1220 COIN CELL THM RETAINER" 750 -100 50 H I L CNN "Description"
+F5 "2.95" 750 -200 50 H I L CNN "Height"
+F6 "534-2895" 750 -300 50 H I L CNN "Mouser Part Number"
+F7 "https://www.mouser.com/Search/Refine.aspx?Keyword=534-2895" 750 -400 50 H I L CNN "Mouser Price/Stock"
+F8 "Keystone Electronics" 750 -500 50 H I L CNN "Manufacturer_Name"
+F9 "2895" 750 -600 50 H I L CNN "Manufacturer_Part_Number"
+DRAW
+X + 1 0 0 200 R 50 50 0 0 U
+X MP1 MP1 0 -100 200 R 50 50 0 0 U
+X - 2 900 0 200 L 50 50 0 0 U
+P 5 0 1 6 200 100 700 100 700 -200 200 -200 200 100 N
+ENDDRAW
+ENDDEF
+#
+#End Library
