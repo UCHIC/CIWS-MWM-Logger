@@ -1,6 +1,6 @@
 # CIWS-MWM-Logger
 
-This repository contains hardware and software designs for a datalogger that can be used to collect high resolution water use data on magnetically-driven residential water meters. The datalogger is designed to read magnetic field information from a magnetometer sensor attached to a magnetically-driven positive-displacement water meter. The data is then processed into magnetic pulses per 4-second period. This data is stored on an SD Card, and can be read from a personal computer. Configuration is done over a serial interface.
+This repository contains hardware and software designs for a datalogger that can be used to collect high resolution water use data on magnetically-driven residential water meters. The datalogger is designed to read magnetic field information from a magnetometer sensor attached to a magnetically-driven positive-displacement water meter. The data is then processed into magnetic pulses per time period, configurable by the user. This data is stored on an SD Card, and can be read from a personal computer. Configuration is done over a serial interface.
 
 It is recommended that the magnetic signal from a water meter be characterized prior to use of the datalogger to ensure the success of the device. A simple setup to accomplish this characterization will be included in this repository soon.
 
