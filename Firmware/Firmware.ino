@@ -200,10 +200,7 @@ void loop()
         nameFile(&State, &Date);
         createHeader(&State);
       }
-      do
-      {
-        storeNewRecord();
-      }while(State.rewrite == true);
+      storeNewRecord();
     }
   }
   
@@ -274,23 +271,6 @@ void INT1_ISR()
 }
 
 /*********************************************\
- * Function Name: sdWriteError
- * Purpose:       Catch write errors to the
- *                SD card
-\*********************************************/
-
-bool sdWriteError(File* dataFile, byte numBytesAttempted, byte numBytesWritten)
-{
-  bool errorCaught = false;
-  if(dataFile->getWriteError())
-    errorCaught = true;
-  if(numBytesAttempted != numBytesWritten)
-    errorCaught = true;
-
-  return errorCaught;
-}
-
-/*********************************************\
  * Function Name: numDigits
  * Purpose:       Calculate the number of
  *                digits in a value (which
@@ -314,7 +294,7 @@ byte numDigits(unsigned long value)
 
 /* Function: storeNewRecord
  *  
- * Author: Daniel Henshaw             
+ * Author: Daniel Henshaw & AJ Beckwith
  * Date: 11/10/18    
  * 
  * Description: This function gets the current time from the Real Time Clock, and then  
@@ -329,42 +309,12 @@ byte numDigits(unsigned long value)
  *   Declare variables
  *   Store pulse count to a variable named final count
  *   Set pulseCount to zero
- *   Read current time from the Real Time Clock and update the Date struct with the current time
- *     turn on the I2C interface (function rtcTransfer does this for us)
- *       read the year and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into years field of Date struct
- *       read the month and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into months field of Date struct
- *       read the day and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into days field of Date struct
- *       read the hour and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into hours field of Date struct
- *       read the minutes and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into minutes field of Date struct
- *       read the seconds and store into temp variable       
- *       convert from binary-coded decimal into binary, and store into seconds field of Date struct 
- *     turn off the I2C interface (function rtcTransfer does this for us)
  *   Write the new record to the SD card  
- *     power on SD card
- *       write new record to SD card 
- *         open the date-time string by writing a double quotation mark
- *           write year, month, day, hours, 
- *           if minutes is less than ten
- *           then
- *             write a leading zero (the minutes value will be appended to it by the next statement)
- *           endIf 
- *           write the minutes         
- *           if seconds is less than ten
- *           then
- *             write a leading zero (the seconds value will be appended to it by the next statement)
- *           endIf  
- *           write the seconds
- *         close the date-time string by writing a double quotation mark
- *         write a comma to begin a new field (CSV file format)
- *         write the record number 
- *         write a comma to begin a new field (CSV file format)
- *         write the number of pulses counted when function was called (finalCount)
- *       end of writing the record to SD card  
+ *     power on SD card  
+ *      Store value of file position in pos
+ *      Write string to SD
+ *      Move SD pointer back to pos
+ *      While bytes are available to be read, read, and if -1 is returned rewrite string
  *     power down SD card     
  * End of function storeNewRecord() 
  */
@@ -379,21 +329,8 @@ void storeNewRecord()
     State.pulseCount = 0;                               //     Set pulseCount to zero
     State.lastCount = finalCount;
     State.totalCount += (unsigned long)finalCount;
-    /*                                                    //     Read current time from the Real Time Clock and update the Date struct with the current time                                                      
-      temp         = rtcTransfer(reg_Years,  READ, 0);  //         read the Years and store into temp variable
-      Date.years   = bcdtobin(temp, YEARS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into years field of Date struct
-      temp         = rtcTransfer(reg_Months, READ, 0);  //         read the Months and store into temp variable
-      Date.months  = bcdtobin(temp, MONTHS_REG_MASK);   //         convert from binary-coded decimal into binary, and store into months field of Date struct
-      temp         = rtcTransfer(reg_Days,   READ, 0);  //         read the Days and store into temp variable
-      Date.days    = bcdtobin(temp, DAYS_REG_MASK);     //         convert from binary-coded decimal into binary, and store into days field of Date struct
-      temp         = rtcTransfer(reg_Hours,  READ, 0);  //         read the Hours and store into temp variable
-      Date.hours   = bcdtobin(temp, HOURS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into hours field of Date struct   
-      temp         = rtcTransfer(reg_Minutes,READ, 0);  //         read the Minutes and store into temp variable  
-      Date.minutes = bcdtobin(temp, MINUTES_REG_MASK);  //         convert from binary-coded decimal into binary, and store into minutes field of Date struct      
-      temp         = rtcTransfer(reg_Seconds,READ, 0);  //         read the Seconds and store into temp variable 
-      Date.seconds = bcdtobin(temp, SECONDS_REG_MASK);  //         convert from binary-coded decimal into binary, and store into seconds field of Date struct    
-      */                                                  //     Write the new record to the SD card  
-      SDPowerUp();                                      //         power on SD card
+
+      SDPowerUp();  
       dataFile = SD.open(State.filename, FILE_WRITE);
       if(!dataFile)
       {
@@ -401,108 +338,27 @@ void storeNewRecord()
           Serial.print(F("\n>> Whoa dudes, bad file pointer!\n>> User:   "));
         writeErrorCaught = true;
       }
-      else
-      {                                                  //         Write new record to SD card 
-        numBytes = dataFile.print('\"');                          //           open the date-time string by writing a double quotation mark
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.years);                     //             write year, month, day, hours 
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.years), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('-');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.months);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.months), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('-');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.days);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.days), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(' ');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.hours);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.hours), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(':');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        if(Date.minutes < 10)                           //             if minutes is less than ten
-        {                                               //             then
-          numBytes = dataFile.print('0');                         //               write a leading zero (the minutes value will be appended to it by the next statement)     
-          if(sdWriteError(&dataFile, 1, numBytes))
-            writeErrorCaught = true;
-        }                                               //             endIf
-        numBytes = dataFile.print(Date.minutes);                   //             write the minutes
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.minutes), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(':');                            //             write a colon to separate minutes from seconds
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        if(Date.seconds < 10)                           //             if seconds is less than ten
-        {                                               //             then
-          numBytes = dataFile.print('0');                         //               write a leading zero (the seconds value will be appended to it by the next statement)
-          if(sdWriteError(&dataFile, 1, numBytes))
-            writeErrorCaught = true;
-        }                                               //             endIf
-        numBytes = dataFile.print(Date.seconds);                   //             write the seconds        
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.seconds), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('\"');                           //           close date-time string by writing a double quotation mark       
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(',');                            //           write a comma to begin a new field (CSV file format)
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(State.recordNum);                //           write the record number       
-        if(sdWriteError(&dataFile, numDigits((unsigned long)State.recordNum), numBytes))
-          writeErrorCaught = true;
-        
-        numBytes = dataFile.print(',');                            //           write a comma to begin a new field (CSV file format)
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.println(finalCount);                   //           write the number of pulses counted when function was called (finalCount) and then print a new line      
-        if(sdWriteError(&dataFile, (numDigits((unsigned long)finalCount) + 2), numBytes))
-          writeErrorCaught = true;
-          
-        dataFile.close();
-      }
-      SDPowerDown();                                    //       power down SD card
-      if(writeErrorCaught)
+      else 
       {
-        if(State.serialOn)
-          Serial.print(F("\n>> Error writing to SD card. Attempting to create a new file.\n>> User:   "));
-        incrementFileNumber();
-        nameFile(&State, &Date);
-        createHeader(&State);
-        State.rewrite = true;
-      }
-      else
-      {
-        if(State.serialOn)
-          Serial.print(F("\n>> Data file written successfully.\n>> User:   "));
-        State.recordNum += 1;
-        State.rewrite = false;
-      }
-}                                                       // End of function storeNewRecord() 
+        bool finished;
+        int pos = dataFile.position();          //Store file position
+        do{
+          finished = true;
+          dataFile.print("\""+String(Date.years)+"-"+String(Date.months)+"-"+String(Date.days)+" "+String(Date.hours)+":"+String(Date.minutes)+":"+String(Date.seconds)+"\","+String(State.recordNum)+","+String(finalCount)+"\n");       //write sting to file
+          dataFile.seek(pos);         //Move file position back to starting point
+          while(dataFile.available()){          //Continue as long as there are bytes to read
+            if(dataFile.read() == -1){          //If byte is corrupted it will return -1
+              finished = false;         //Set flag to fasle to redo writing
+              dataFile.seek(pos);         //Move file position back to beginning for rewriting
+              break;
+            }         
+          }
+        }while(!finished);          //continues as long as bytes are returned corrupted
+      }    
+      dataFile.close();         //closes file
+      SDPowerDown();          //Powers down SD
+      State.recordNum += 1;
+}
 
 
 
