@@ -2,7 +2,15 @@
 
 This repository contains hardware and software designs for a datalogger that can be used to collect high resolution water use data on magnetically-driven residential water meters. The datalogger is designed to read magnetic field information from a magnetometer sensor attached to a magnetically-driven positive-displacement water meter. The data is then processed into magnetic pulses per time period, configurable by the user. This data is stored on an SD Card, and can be read from a personal computer. Configuration is done over a serial interface.
 
-It is recommended that the magnetic signal from a water meter be characterized prior to use of the datalogger to ensure the success of the device. A simple setup to accomplish this characterization will be included in this repository soon.
+Documentation: The Docs folder contains documentation pertaining to this datalogger.
+
+Firmware: The Firmware folder contains code written for the datalogger.
+
+Hardware: The Hardware folder contains hardware design information for off-the-shelf components as well as a 
+manufacturable PCB.
+
+Tools: The Tools folder contains software tools for characterizing the magnetic signal on residential water 
+meters.
 
 ## Cyberinfrastructure for Intelligent Water Supply (CIWS) 
 
