@@ -36,5 +36,6 @@ void printConfig(State_t* State);
 void createHeader(State_t* State);
 void nameFile(State_t* State, Date_t* Date);
 void incrementFileNumber(void);
+void checkSDError(void);
 
 #endif

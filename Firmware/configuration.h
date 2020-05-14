@@ -26,8 +26,14 @@
 #define addr_chs2 17
 #define addr_chs3 18
 
+#define addr_SD_ERROR 64
+#define SD_ERROR 0xA5
+
 bool configurationExists(void);
 uint8_t readConfiguration(uint8_t segment);
 void writeConfiguration(uint8_t segment, char data);
+void markError(void);
+void clearError(void);
+bool isError(void);
 
 #endif

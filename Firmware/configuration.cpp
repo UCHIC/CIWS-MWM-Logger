@@ -43,3 +43,26 @@ void writeConfiguration(uint8_t segment, char data)
 
   return;
 }
+
+void markError(void)
+{
+  writeConfiguration(addr_SD_ERROR, SD_ERROR);
+
+  return;
+}
+
+void clearError(void)
+{
+  writeConfiguration(addr_SD_ERROR, 0);
+
+  return;
+}
+
+bool isError(void)
+{
+  bool error = false;
+  if(readConfiguration(addr_SD_ERROR) == SD_ERROR)
+    error = true;
+
+  return error;
+}

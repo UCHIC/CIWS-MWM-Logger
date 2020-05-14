@@ -350,6 +350,7 @@ void storeNewRecord()
             if(dataFile.read() == -1){          //If byte is corrupted it will return -1
               finished = false;         //Set flag to fasle to redo writing
               dataFile.seek(pos);         //Move file position back to beginning for rewriting
+              markError();
               break;
             }         
           }

@@ -69,6 +69,16 @@ void handleSerial(volatile State_t* State, Date_t* Date, volatile SignalState_t*
         Serial.print(F("\n>> User:   "));
         break;
 
+      case 'C':                 // Check the SD card for errors
+        checkSDError();
+        Serial.print(F("\n>> User:   "));
+        break;
+
+      case 'q':                 // Clear SD card error mark
+        clearError();
+        Serial.print(F("\n>> User:   "));
+        break;
+
       case 'd':                 // View the current date and time.
         viewDateTime(Date);
         Serial.print(F("\n>> User:   "));
@@ -447,6 +457,7 @@ void printHelp()
 {
   Serial.print(F(">> Logger: List of commands:\n"));
   Serial.print(F("           c  -- Clean SD card\n"));
+  Serial.print(F("           C  -- Check for SD card errors\n"));
   Serial.print(F("           d  -- View date/time\n"));
   Serial.print(F("           e  -- Exit serial interface\n"));
   Serial.print(F("           E  -- Eject SD card\n"));
@@ -455,6 +466,7 @@ void printHelp()
   Serial.print(F("           i  -- Initialize the SD card\n"));
   Serial.print(F("           l  -- List files on the SD card\n"));
   Serial.print(F("           p  -- Print configuration data\n"));
+  Serial.print(F("           q  -- Clear SD error mark\n"));
   Serial.print(F("           R  -- Diagnose the RTC\n"));
   Serial.print(F("           t  -- Set the time interval at which data is stored on the SD card.\n"));
   Serial.print(F("           s  -- Start datalogging (will append to any existing datalog.csv)\n"));
@@ -1139,6 +1151,16 @@ void incrementFileNumber(void)
   writeConfiguration(addr_fileNum100, ((fileNum % 10) + 48));
   fileNum = fileNum / 10;
   writeConfiguration(addr_fileNum1000, ((fileNum % 10) + 48));
+
+  return;
+}
+
+void checkSDError(void)
+{
+  if(isError())
+    Serial.println(F(">> Logger: SD error detected."));
+  else
+    Serial.println(F(">> Logger: No SD errors detected."));
 
   return;
 }
