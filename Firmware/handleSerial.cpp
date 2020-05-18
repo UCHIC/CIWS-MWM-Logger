@@ -592,7 +592,8 @@ void RTC_Doctor()
     Serial.print(F("    2 -- Reset Interrupt Timer\n"));
     Serial.print(F("    3 -- Display the RTC Register contents\n"));
     Serial.print(F("    4 -- Alter a register\n"));
-    Serial.print(F("    5 -- Finish\n"));
+    Serial.print(F("    5 -- Calibrate Clock\n"));
+    Serial.print(F("    6 -- Finish\n"));
     Serial.print(F(">> User:   "));
     char input = getNestedInput();
 
@@ -711,8 +712,22 @@ void RTC_Doctor()
         Serial.print(F("\n>> RTC Doctor: Finished! Check the registers to make sure they're correct:\n"));
         registerDump();
         break;
-        
+
       case '5':
+        Serial.print(F("\n>> RTC Doctor: Enter measured frequency in HZ followed by any non-numerical character.\n"));
+        Serial.print(F(">> User:   "));
+        double HZ = Serial.parseFloat(); //read float values from buffer
+        Serial.read();   //throwaway character
+        Serial.print(HZ);
+        byte corrpul = round(((1000000.00*((1.00/32768.00)-(1.00/HZ)))/(1.00/HZ))/4.34);   //equation available on the PCF8523 Datasheet
+        rtcTransfer(reg_Offset, WRITE, corrpul&0b01111111);
+        Serial.print(F("\n>> RTC Doctor: Offset updated to "));
+        Serial.print((char)corrpul,DEC);
+        Serial.print(F(" Correction Pulses. See register 14(Value is in 2's complement and 6 bits long!)):\n"));
+        registerDump();
+        break;
+        
+      case '6':
         finished = true;
         break;
 
