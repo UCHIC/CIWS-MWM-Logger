@@ -344,6 +344,7 @@ void storeNewRecord()
         int pos = dataFile.position();          //Store file position
         do{
           finished = true;
+          //TODO: Need to add leading zeros before minutes and seconds less than 10.
           dataFile.print("\""+String(Date.years)+"-"+String(Date.months)+"-"+String(Date.days)+" "+String(Date.hours)+":"+String(Date.minutes)+":"+String(Date.seconds)+"\","+String(State.recordNum)+","+String(finalCount)+"\n");       //write sting to file
           dataFile.seek(pos);         //Move file position back to starting point
           while(dataFile.available()){          //Continue as long as there are bytes to read
