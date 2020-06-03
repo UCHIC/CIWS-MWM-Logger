@@ -106,6 +106,12 @@ byte currDay;                       // Tracks current day for file chunking
 
 void setup() 
 {
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+
+
+
+  
   resetState(&State);             // Setup the System State structure
   
   pinMode(2, INPUT);              // Setup the Digital I/O Pins       
@@ -341,22 +347,45 @@ void storeNewRecord()
       else 
       {
         bool finished;
-        int pos = dataFile.position();          //Store file position
+        dataFile.print(F("\n"));
+        unsigned long pos = dataFile.position();          //Store file position
         do{
           finished = true;
-          //TODO: Need to add leading zeros before minutes and seconds less than 10.
-          dataFile.print("\""+String(Date.years)+"-"+String(Date.months)+"-"+String(Date.days)+" "+String(Date.hours)+":"+String(Date.minutes)+":"+String(Date.seconds)+"\","+String(State.recordNum)+","+String(finalCount)+"\n");       //write sting to file
+          dataFile.print(F("\""));
+          dataFile.print(Date.years);
+          dataFile.print(F("-"));
+          dataFile.print(Date.months);
+          dataFile.print(F("-"));
+          dataFile.print(Date.days);
+          dataFile.print(F(" "));
+          if(Date.hours < 10)
+            {dataFile.print(0);}
+          dataFile.print(Date.hours);
+          dataFile.print(F(":"));
+          if(Date.minutes < 10)
+            {dataFile.print(0);}
+          dataFile.print(Date.minutes);
+          dataFile.print(F(":"));
+          if(Date.seconds < 10)
+            {dataFile.print(0);}
+          dataFile.print(Date.seconds);
+          dataFile.print(F("\","));
+          dataFile.print(State.recordNum);
+          dataFile.print(F(","));
+          dataFile.print(finalCount);
+          dataFile.flush();           //save data to sd for reading
           dataFile.seek(pos);         //Move file position back to starting point
           while(dataFile.available()){          //Continue as long as there are bytes to read
-            if(dataFile.read() == -1){          //If byte is corrupted it will return -1
-              finished = false;         //Set flag to fasle to redo writing
+            char temp = dataFile.read();
+            if(temp == -1){          //If byte is corrupted it will return -1
+              finished = false;         //Set flag to false to redo writing
               dataFile.seek(pos);         //Move file position back to beginning for rewriting
               markError();
               break;
             }         
-          }
+          } 
         }while(!finished);          //continues as long as bytes are returned corrupted
-      }    
+      }   
       dataFile.close();         //closes file
       SDPowerDown();          //Powers down SD
       State.recordNum += 1;
