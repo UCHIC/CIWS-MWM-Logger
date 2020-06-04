@@ -606,6 +606,9 @@ void RTC_Doctor()
     byte hexConv16;
     byte hexConv1;
     byte hexInput;
+
+    double HZ;
+    byte corrpul;
   
     switch(input)
     {
@@ -716,10 +719,10 @@ void RTC_Doctor()
       case '5':
         Serial.print(F("\n>> RTC Doctor: Enter measured frequency in HZ followed by any non-numerical character.\n"));
         Serial.print(F(">> User:   "));
-        double HZ = Serial.parseFloat(); //read float values from buffer
+        HZ = Serial.parseFloat(); //read float values from buffer
         Serial.read();   //throwaway character
         Serial.print(HZ);
-        byte corrpul = round(((1000000.00*((1.00/32768.00)-(1.00/HZ)))/(1.00/HZ))/4.34);   //equation available on the PCF8523 Datasheet
+        corrpul = round(((1000000.00*((1.00/32768.00)-(1.00/HZ)))/(1.00/HZ))/4.34);   //equation available on the PCF8523 Datasheet
         rtcTransfer(reg_Offset, WRITE, corrpul&0b01111111);
         Serial.print(F("\n>> RTC Doctor: Offset updated to "));
         Serial.print((char)corrpul,DEC);
