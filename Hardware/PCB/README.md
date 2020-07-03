@@ -1,9 +1,9 @@
 ### Design files for a manufacturable Printed Circuit Board
-Single-board design files (KiCad): Residential_PCB_Design-SMD.
+Single-board design files (KiCad): `Residential_PCB_Design-SMD`.
 
-SamacSys footprints/symvols (KiCad): SamacSys_PCB_Library/KiCad.
+SamacSys footprints/symvols (KiCad): `SamacSys_PCB_Library/KiCad`.
 
-Files for manufacture: Manufacturer_Files.
+Files for manufacture: `Manufacturer_Files`.
 
 ### Dependancies
 Depends on Sparkfun KiCad Libraries and SamacSys footprints and symbols.
