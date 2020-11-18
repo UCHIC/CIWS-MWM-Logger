@@ -3,7 +3,7 @@
  * Date:      04/17/2019
  * Authors:   Joshua Tracy and Daniel Henshaw
  *********************************************************************/
-
+ 
 #include "handleSerial.h"
 #include <Arduino.h>
 #include <SPI.h>
@@ -1082,7 +1082,7 @@ void createHeader(State_t* State)
   dataFile.print(F("Meter Resolution: "));
   dataFile.println(State->meterSize, 3);
   
-  dataFile.print(F("Time,Record,Pulses\n"));
+  dataFile.print(F("Time,Record,Milliseconds\n"));
 
   dataFile.close();
   SDPowerDown();

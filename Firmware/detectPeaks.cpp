@@ -102,7 +102,6 @@ bool peakDetected2(volatile SignalState_t* signalState)
   float neg_thresh = -1;                                                                                // Negative threshold for schmitt triggering
 
   signalState->y[1] = signalState->a * signalState->y[0] + signalState->x[1] - signalState->x[0];         // Filter: Remove DC Offset
-
   signalState->y[0] = signalState->y[1];                                                                  // Save current y as old y
   signalState->x[0] = signalState->x[1];                                                                  // Save current x as old x
 
@@ -121,6 +120,9 @@ bool peakDetected2(volatile SignalState_t* signalState)
     default:
       break;
   }
-
+  //Serial.print("X Value: ");
+  //Serial.println(signalState->x[1]);
+  //Serial.print("Peak Detected: ");
+  //Serial.println(peak);
   return peak;                                                                                            // Return whether or not a peak was detected.
 }

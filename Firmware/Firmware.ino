@@ -65,13 +65,13 @@
 #include <SD.h>
 
 #include "handleSerial.h"
-#include "powerSleep.h"
 #include "state.h"
 #include "RTC_PCF8523.h"
 #include "storeNewRecord.h"
 #include "detectPeaks.h"
 #include "magnetometer.h"
 #include "configuration.h"
+#include "MemoryFree.h"
 
 // These six macros below are the ten's place mask for the various real time clock registers
 #define SECONDS_REG_MASK 0x7                            // keep lower 3 bits
@@ -103,6 +103,12 @@ Date_t Date;                        // System Time and Date structure
 File dataFile;                      // File pointer for SD Card operations
 volatile SignalState_t SignalState; // Struct containing signal data from magnetometer
 byte currDay;                       // Tracks current day for file chunking
+unsigned long startMillis = 0;
+unsigned long backLog[50];
+int backLogWritePos = 0;
+int backLogReadPos = 0;
+bool initialize = true;
+bool tempor = true;
 
 void setup() 
 {
@@ -154,15 +160,34 @@ void setup()
   }
 }
 
-void loop() 
+void readMag()
 {
-  // JOSH
-  /*****************************************\
-  * ButtonCheck: Is the button pressed?
-  * If button is pressed (active-low):
-  *   Set serialOn flag.
-  *   call serialPowerUp()
-  \*****************************************/  
+  //if(State.serialOn)
+  //  Serial.println("Interrupted");
+  State.readMag = false;
+  readData(&SignalState);  // changed from calling read_mag(mag_out) back to readData(&SignalState). Now it should work as intented, per J.T.'s instructions to me. 4/23/19 by D.H.
+
+  // bool peak = peakDetected(&SignalState);
+  bool peak = peakDetected2(&SignalState);
+  if(peak){
+    backLog[backLogWritePos] = millis();
+    if(backLogWritePos == 49){
+      backLogWritePos = 0;
+    }
+    else{
+      backLogWritePos++;
+    }
+    //if(State.serialOn)
+      //Serial.println("Peak Detected");
+  }
+}
+
+void loop() 
+{  
+  Serial.print(F("Memory at start of loop: "));
+  Serial.println(freeMemory());
+  if(State.readMag){readMag();}// Serial.println("1");}
+  
   if((digitalRead(5) == 0) && !State.serialOn)
   {
     State.serialOn = true;
@@ -170,80 +195,165 @@ void loop()
     if(!State.configured)
       Serial.print(F(">> Logger: Invalid device configuration. Reset configuration with command 'g'\n"));
   }
-    
-  // JOSH
-  /*****************************************\
-  * Serial: User I/O over serial
-  * serialOn flag is set:
-  *   call function handleSerial();
-  \*****************************************/
+
   if(State.serialOn)
     handleSerial(&State, &Date, &SignalState);
+    
+  if(State.readMag){readMag();}// Serial.println("2");}
   
-  // DANIEL
-  /*****************************************\
-  * 4-second update: Update at 4 seconds
-  * If 4-second flag is set:
-  *   Store a new record
-  \*****************************************/
-  if(State.flag4)
-  {
-    State.flag4 = 0;                                    //     Reset flag4 to zero
-    rtcTransfer(reg_Control_2, WRITE, 0x02);            //     Reset real time clock interrupt flag
-    loadDateTime(&Date);
-    if(State.logging)
-    {
-      if(Date.days != currDay)
+  if(backLog[backLogReadPos] != 0)
+  { 
+    Serial.print(F("Memory at start of writing function: "));
+    Serial.println(freeMemory());
+    digitalWrite(4, HIGH);
+    unsigned int finalCount;                            //     Declare variables
+    byte temp;
+    bool writeErrorCaught = false;
+    finalCount = State.pulseCount;                      //     Store pulse count to a variable named final count
+    State.pulseCount = 0;                               //     Set pulseCount to zero
+    State.lastCount = finalCount;
+    State.totalCount += (unsigned long)finalCount;
+    if(startMillis == 0){
+      startMillis = millis();
+      loadDateTime(&Date);
+    }
+    if(State.readMag){readMag();}// Serial.println("3");}
+    /*                                                    //     Read current time from the Real Time Clock and update the Date struct with the current time                                                      
+      temp         = rtcTransfer(reg_Years,  READ, 0);  //         read the Years and store into temp variable
+      Date.years   = bcdtobin(temp, YEARS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into years field of Date struct
+      temp         = rtcTransfer(reg_Months, READ, 0);  //         read the Months and store into temp variable
+      Date.months  = bcdtobin(temp, MONTHS_REG_MASK);   //         convert from binary-coded decimal into binary, and store into months field of Date struct
+      temp         = rtcTransfer(reg_Days,   READ, 0);  //         read the Days and store into temp variable
+      Date.days    = bcdtobin(temp, DAYS_REG_MASK);     //         convert from binary-coded decimal into binary, and store into days field of Date struct
+      temp         = rtcTransfer(reg_Hours,  READ, 0);  //         read the Hours and store into temp variable
+      Date.hours   = bcdtobin(temp, HOURS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into hours field of Date struct   
+      temp         = rtcTransfer(reg_Minutes,READ, 0);  //         read the Minutes and store into temp variable  
+      Date.minutes = bcdtobin(temp, MINUTES_REG_MASK);  //         convert from binary-coded decimal into binary, and store into minutes field of Date struct      
+      temp         = rtcTransfer(reg_Seconds,READ, 0);  //         read the Seconds and store into temp variable 
+      Date.seconds = bcdtobin(temp, SECONDS_REG_MASK);  //         convert from binary-coded decimal into binary, and store into seconds field of Date struct    
+      */                                                  //     Write the new record to the SD card  
+      if(initialize){
+        Serial.print(F("Memory right before SD opens: "));
+        Serial.println(freeMemory());
+        SDPowerUp();                                      //         power on SD card
+        if(State.readMag){readMag();}// Serial.println("4");}
+        dataFile = SD.open(State.filename, FILE_WRITE);
+        initialize = false;
+        Serial.print(F("Memory right after SD opens: "));
+        Serial.println(freeMemory());
+      }
+      
+      if(State.readMag){readMag();}// Serial.println("5");}
+      
+      if(!dataFile)
       {
-        currDay = Date.days;
+        if(State.serialOn)
+          Serial.print(F("\n>> Whoa dudes, bad file pointer!\n>> User:   "));
+        writeErrorCaught = true;
+      }
+      else
+      {                                                  //         Write new record to SD card 
+        if(State.readMag){readMag();}// Serial.println("6");}
+        
+        double leftSeconds = (backLog[backLogReadPos]-startMillis)/1000.00;
+        double timeSeconds = double((Date.seconds + (unsigned long)leftSeconds)%60) + (leftSeconds - (unsigned long)leftSeconds);
+        int leftMinutes = (Date.seconds + leftSeconds)/60;
+        int timeMinutes = (Date.minutes + leftMinutes)%60;
+        int leftHours = (Date.minutes + leftMinutes)/60;
+        int timeHours = (Date.hours + leftHours)%24;
+        int leftDay = (Date.hours + leftHours)/24;
+        int timeDay = Date.days + leftDay;
+
+        if(State.readMag){readMag();}// Serial.println("7");}
+        Serial.print(F("Memory right before writing starts: "));
+        Serial.println(freeMemory());
+
+        dataFile.print('\"');                          //           open the date-time string by writing a double quotation mark
+        dataFile.print(Date.years);                     //             write year, month, day, hours 
+        dataFile.print('-');
+        dataFile.print(Date.months); 
+        dataFile.print('-'); 
+        dataFile.print(timeDay);
+        dataFile.print(' '); 
+        dataFile.print(timeHours);
+        dataFile.print(':');
+
+        if(State.readMag){readMag();}// Serial.println("8");}
+        
+        if(timeMinutes < 10)                           //             if minutes is less than ten
+        {                                               //             then
+          dataFile.print('0');                         //               write a leading zero (the minutes value will be appended to it by the next statement)     
+
+        }                                               //             endIf
+        dataFile.print(timeMinutes);                   //             write the minutes 
+        dataFile.print(':');                            //             write a colon to separate minutes from seconds
+
+        if(timeSeconds < 10)                           //             if seconds is less than ten
+        {                                               //             then
+          dataFile.print('0');                         //               write a leading zero (the seconds value will be appended to it by the next statement)
+
+        }                                               //             endIf
+        dataFile.print(timeSeconds,3);                   //             write the seconds          
+        dataFile.print('\"');                           //           close date-time string by writing a double quotation mark        
+        dataFile.print(',');                            //           write a comma to begin a new field (CSV file format)  
+        dataFile.print(State.recordNum);                //           write the record number       
+        dataFile.print(',');                            //           write a comma to begin a new field (CSV file format) 
+        dataFile.println(millis());                   //           write the number of pulses counted when function was called (finalCount) and then print a new line      
+        Serial.print(F("Memory right after writing ends: "));
+        Serial.println(freeMemory());
+
+        if(State.readMag){readMag();}// Serial.println("10");}
+
+        backLog[backLogReadPos] = 0;
+        if(backLogReadPos == 49){
+          backLogReadPos = 0;
+        }
+        else{
+           backLogReadPos++;
+        }
+
+        if(State.readMag){readMag();}// Serial.println("9");}
+
+        tempor = true; //backLog[backLogReadPos] == 0;
+        if(tempor){
+          Serial.print(F("Memory right before SD closes: "));
+          Serial.println(freeMemory());
+          dataFile.close();
+          Serial.print(F("Memory right after SD closes: "));
+          Serial.println(freeMemory());
+          initialize = true;
+        }
+      }
+      
+      if(State.readMag){readMag();}// Serial.println("11");}
+
+      if(tempor){
+        SDPowerDown();
+      }                                    //       power down SD card
+      
+      if(State.readMag){readMag();}// Serial.println("12");}
+      
+      if(writeErrorCaught)
+      {
+        if(State.serialOn)
+          Serial.print(F("\n>> Error writing to SD card. Attempting to create a new file.\n>> User:   "));
         incrementFileNumber();
         nameFile(&State, &Date);
         createHeader(&State);
+        State.rewrite = true;
       }
-      do
+      else
       {
-        storeNewRecord();
-      }while(State.rewrite == true);
-    }
+        State.recordNum += 1;
+        State.rewrite = false;
+      }
+      digitalWrite(4, LOW);
+      Serial.print(F("Memory at end of writing function: "));
+      Serial.println(freeMemory());
   }
-  
-  // JOSH
-  /*****************************************\
-   * Read Magnetometer: 
-   * 
-   * If readMag is set:
-   *   call readData(&mag, &SignalState);
-   *   If peakDetected(&SignalState)
-   *     State.pulseCount += 1;
-  \*****************************************/
-  if(State.readMag)
-  {
-    //if(State.serialOn)
-    //  Serial.println("Interrupted");
-    State.readMag = false;
-    readData(&SignalState);  // changed from calling read_mag(mag_out) back to readData(&SignalState). Now it should work as intented, per J.T.'s instructions to me. 4/23/19 by D.H.
-
-    // bool peak = peakDetected(&SignalState);
-    bool peak = peakDetected2(&SignalState);
-    
-    if(peak){
-      State.pulseCount += 1;
-      //if(State.serialOn)
-        //Serial.println("Peak Detected");
-    }
-  }
-  
-  // JOSH
-  /*****************************************\
-  * Sleep: put processor to sleep
-  *        to be woken by interrupts
-  * If serialOn is not set:
-  *   call function Sleep();
-  \*****************************************/
-  //if(!State.serialOn)
-    //enterSleep();
-
 }
+
+
 
 // DANIEL
 /* Function Title: INT0_ISR()
@@ -270,7 +380,7 @@ void INT0_ISR()
  */
 void INT1_ISR()
 {
-  State.flag4 = true;     // sets the "four second flag" to true
+  //State.flag4 = true;     // sets the "four second flag" to true
 }
 
 /*********************************************\
@@ -369,140 +479,7 @@ byte numDigits(unsigned long value)
  * End of function storeNewRecord() 
  */
 
-void storeNewRecord() 
-{                                                       // Begin
-    unsigned int finalCount;                            //     Declare variables
-    byte temp;
-    bool writeErrorCaught = false;
-    byte numBytes = 0;
-    finalCount = State.pulseCount;                      //     Store pulse count to a variable named final count
-    State.pulseCount = 0;                               //     Set pulseCount to zero
-    State.lastCount = finalCount;
-    State.totalCount += (unsigned long)finalCount;
-    /*                                                    //     Read current time from the Real Time Clock and update the Date struct with the current time                                                      
-      temp         = rtcTransfer(reg_Years,  READ, 0);  //         read the Years and store into temp variable
-      Date.years   = bcdtobin(temp, YEARS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into years field of Date struct
-      temp         = rtcTransfer(reg_Months, READ, 0);  //         read the Months and store into temp variable
-      Date.months  = bcdtobin(temp, MONTHS_REG_MASK);   //         convert from binary-coded decimal into binary, and store into months field of Date struct
-      temp         = rtcTransfer(reg_Days,   READ, 0);  //         read the Days and store into temp variable
-      Date.days    = bcdtobin(temp, DAYS_REG_MASK);     //         convert from binary-coded decimal into binary, and store into days field of Date struct
-      temp         = rtcTransfer(reg_Hours,  READ, 0);  //         read the Hours and store into temp variable
-      Date.hours   = bcdtobin(temp, HOURS_REG_MASK);    //         convert from binary-coded decimal into binary, and store into hours field of Date struct   
-      temp         = rtcTransfer(reg_Minutes,READ, 0);  //         read the Minutes and store into temp variable  
-      Date.minutes = bcdtobin(temp, MINUTES_REG_MASK);  //         convert from binary-coded decimal into binary, and store into minutes field of Date struct      
-      temp         = rtcTransfer(reg_Seconds,READ, 0);  //         read the Seconds and store into temp variable 
-      Date.seconds = bcdtobin(temp, SECONDS_REG_MASK);  //         convert from binary-coded decimal into binary, and store into seconds field of Date struct    
-      */                                                  //     Write the new record to the SD card  
-      SDPowerUp();                                      //         power on SD card
-      dataFile = SD.open(State.filename, FILE_WRITE);
-      if(!dataFile)
-      {
-        if(State.serialOn)
-          Serial.print(F("\n>> Whoa dudes, bad file pointer!\n>> User:   "));
-        writeErrorCaught = true;
-      }
-      else
-      {                                                  //         Write new record to SD card 
-        numBytes = dataFile.print('\"');                          //           open the date-time string by writing a double quotation mark
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.years);                     //             write year, month, day, hours 
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.years), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('-');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.months);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.months), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('-');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.days);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.days), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(' ');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(Date.hours);
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.hours), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(':');
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        if(Date.minutes < 10)                           //             if minutes is less than ten
-        {                                               //             then
-          numBytes = dataFile.print('0');                         //               write a leading zero (the minutes value will be appended to it by the next statement)     
-          if(sdWriteError(&dataFile, 1, numBytes))
-            writeErrorCaught = true;
-        }                                               //             endIf
-        numBytes = dataFile.print(Date.minutes);                   //             write the minutes
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.minutes), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(':');                            //             write a colon to separate minutes from seconds
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        if(Date.seconds < 10)                           //             if seconds is less than ten
-        {                                               //             then
-          numBytes = dataFile.print('0');                         //               write a leading zero (the seconds value will be appended to it by the next statement)
-          if(sdWriteError(&dataFile, 1, numBytes))
-            writeErrorCaught = true;
-        }                                               //             endIf
-        numBytes = dataFile.print(Date.seconds);                   //             write the seconds        
-        if(sdWriteError(&dataFile, numDigits((unsigned long)Date.seconds), numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print('\"');                           //           close date-time string by writing a double quotation mark       
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(',');                            //           write a comma to begin a new field (CSV file format)
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.print(State.recordNum);                //           write the record number       
-        if(sdWriteError(&dataFile, numDigits((unsigned long)State.recordNum), numBytes))
-          writeErrorCaught = true;
-        
-        numBytes = dataFile.print(',');                            //           write a comma to begin a new field (CSV file format)
-        if(sdWriteError(&dataFile, 1, numBytes))
-          writeErrorCaught = true;
-          
-        numBytes = dataFile.println(finalCount);                   //           write the number of pulses counted when function was called (finalCount) and then print a new line      
-        if(sdWriteError(&dataFile, (numDigits((unsigned long)finalCount) + 2), numBytes))
-          writeErrorCaught = true;
-          
-        dataFile.close();
-      }
-      SDPowerDown();                                    //       power down SD card
-      if(writeErrorCaught)
-      {
-        if(State.serialOn)
-          Serial.print(F("\n>> Error writing to SD card. Attempting to create a new file.\n>> User:   "));
-        incrementFileNumber();
-        nameFile(&State, &Date);
-        createHeader(&State);
-        State.rewrite = true;
-      }
-      else
-      {
-        if(State.serialOn)
-          Serial.print(F("\n>> Data file written successfully.\n>> User:   "));
-        State.recordNum += 1;
-        State.rewrite = false;
-      }
-}                                                       // End of function storeNewRecord() 
+
 
 
 

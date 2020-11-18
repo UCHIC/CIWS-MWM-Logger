@@ -317,8 +317,7 @@ void readData(volatile SignalState_t* SignalState)
   
  // SignalState->x = mag->readMagX();
   read_mag(mag_out);                          // Read the new data 
-  SignalState->x[1] = (float) mag_out[MAG_X];    // Store the X-axis data (after a type cast from int_8 to float) into x variable of signalState structure
-    
+  SignalState->x[1] = (float) mag_out[MAG_Y];    // Store the X-axis data (after a type cast from int_8 to float) into x variable of signalState structure
   twiPowerDown();                             // Power down the Two Wire Interface (TWI)
     
   return;                                     // End
